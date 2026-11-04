@@ -32,7 +32,23 @@ impl SmbiosTable {
 
     pub fn extract_fields(&self) -> Result<Vec<SmbiosField>> {
         let mut fields = Vec::new();
-        let mut pos = 0;
+        // GetSystemFirmwareTable('RSMB') returns RawSMBIOSData:
+        // Used20CallingMethod, major, minor, DMI revision, u32 length,
+        // followed by the SMBIOS structures. Preserve absolute offsets
+        // because the trampoline patches the original API response buffer.
+        let mut pos = 0usize;
+        if self.raw.len() >= 8 {
+            let declared = u32::from_le_bytes(
+                self.raw[4..8].try_into().expect("fixed 4-byte slice"),
+            ) as usize;
+            if declared == self.raw.len() - 8
+                && self.raw[0] <= 1
+                && self.raw[1] >= 2
+                && self.raw[2] <= 99
+            {
+                pos = 8;
+            }
+        }
         loop {
             if pos + 4 > self.raw.len() {
                 break;
@@ -232,6 +248,22 @@ mod tests {
 
         assert_eq!(fields[3].role, SmbiosFieldRole::Type2Product);
         assert_eq!(fields[3].value, "TUF B360M-PLUS GAMING S");
+    }
+
+    #[test]
+    fn extracts_fields_from_rsmb_with_absolute_offsets() {
+        let raw = make_fixture();
+        let mut wrapped = vec![0, 2, 7, 0];
+        wrapped.extend_from_slice(&(raw.len() as u32).to_le_bytes());
+        wrapped.extend_from_slice(&raw);
+        let bare = SmbiosTable::new(raw).extract_fields().unwrap();
+        let fields = SmbiosTable::new(wrapped).extract_fields().unwrap();
+        assert_eq!(fields.len(), 4);
+        for (original, wrapped) in bare.iter().zip(fields.iter()) {
+            assert_eq!(original.role, wrapped.role);
+            assert_eq!(original.value, wrapped.value);
+            assert_eq!(wrapped.offset, original.offset + 8);
+        }
     }
 
     #[test]
