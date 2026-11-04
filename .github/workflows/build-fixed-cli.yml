@@ -1,0 +1,26 @@
+name: Build fixed MiPCM CLI (Windows)
+
+on:
+  push:
+    branches:
+      - fix/smbios-rsmb-header
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-cli:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test SMBIOS parser
+        run: cargo test --no-default-features --features cli experimental::smbios
+      - name: Build release CLI
+        run: cargo build --release --no-default-features --features cli --bin MiPCM_CLI
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MiPCM_CLI-SMBIOS-RSMB-fixed-Windows
+          path: target/release/MiPCM_CLI.exe
+          if-no-files-found: error
