@@ -1,7 +1,7 @@
-name: Build Gboard Mirror LSPosed Experimental APK
+name: Build Gboard Turkish Q v0.2 LSPosed APK
 on:
   push:
-    branches: [feature/gboard-pass-through-lsposed]
+    branches: [feature/gboard-turkish-q-v0-2]
   pull_request:
     branches: [main]
     paths:
@@ -36,6 +36,6 @@ jobs:
         run: gradle --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: Gboard-Mirror-PassThrough-LSPosed-debug-apk
+          name: Gboard-Turkish-Q-v0.2-LSPosed-APK
           path: experimental/gboard-pass-through-lsposed/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
