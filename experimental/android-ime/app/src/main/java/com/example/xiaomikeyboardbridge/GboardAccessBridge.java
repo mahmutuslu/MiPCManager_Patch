@@ -23,6 +23,14 @@ public final class GboardAccessBridge extends AccessibilityService {
   public static boolean enabled() { return active!=null; }
 
   static void insert(String value, BiConsumer<Integer,String> completion) {
+    edit(value, false, completion);
+  }
+
+  static void backspace(BiConsumer<Integer,String> completion) {
+    edit("", true, completion);
+  }
+
+  private static void edit(String value, boolean backspace, BiConsumer<Integer,String> completion) {
     MAIN.post(() -> {
       GboardAccessBridge service=active;
       if(service==null) { completion.accept(30,"ACCESSIBILITY_NOT_ENABLED"); return; }
@@ -42,7 +50,12 @@ public final class GboardAccessBridge extends AccessibilityService {
       if(start<0 || end<start || end>oldText.length()) {
         completion.accept(35,"SELECTION_UNKNOWN"); return;
       }
-      String newText=oldText.substring(0,start)+value+oldText.substring(end);
+      int replaceStart=start;
+      if(backspace && start==end) {
+        if(start==0) { completion.accept(120,"GBOARD_NO_CHANGE"); return; }
+        replaceStart=Character.offsetByCodePoints(oldText, start, -1);
+      }
+      String newText=oldText.substring(0,replaceStart)+value+oldText.substring(end);
       Bundle args=new Bundle();
       args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,newText);
       if(!target.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT,args)) {
@@ -50,7 +63,7 @@ public final class GboardAccessBridge extends AccessibilityService {
       }
       // ACTION_SET_TEXT generally puts the cursor at the end. Restore its
       // intended position when insertion occurred in the middle of the text.
-      int next=start+value.length();
+      int next=replaceStart+value.length();
       Bundle sel=new Bundle();
       sel.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_START_INT,next);
       sel.putInt(AccessibilityNodeInfo.ACTION_ARGUMENT_SELECTION_END_INT,next);
