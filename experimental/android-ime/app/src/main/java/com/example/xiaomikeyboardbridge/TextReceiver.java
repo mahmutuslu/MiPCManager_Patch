@@ -15,13 +15,15 @@ public final class TextReceiver extends BroadcastReceiver {
       setResultCode(21); setResultData("BAD_TOKEN"); return;
     }
     String value;
+    boolean backspace = false;
     if (i.hasExtra("cp")) {
       int cp = i.getIntExtra("cp", -1);
-      if (!Character.isValidCodePoint(cp) || cp < 0x20 ||
+      backspace = cp == 8;
+      if (!Character.isValidCodePoint(cp) || (cp < 0x20 && cp != 8 && cp != 10) ||
           cp == 0x7F || (cp >= 0xD800 && cp <= 0xDFFF)) {
         setResultCode(26); setResultData("INVALID_CODEPOINT"); return;
       }
-      value = new String(Character.toChars(cp));
+      value = backspace ? "" : new String(Character.toChars(cp));
     } else {
       value = i.getStringExtra("char");
       if (value == null || value.codePointCount(0, value.length()) != 1 ||
@@ -34,7 +36,13 @@ public final class TextReceiver extends BroadcastReceiver {
       try { pending.setResultCode(code); pending.setResultData(status); }
       finally { pending.finish(); }
     };
-    if (GboardAccessBridge.enabled()) GboardAccessBridge.insert(value, result);
-    else BridgeIme.commit(value, result);
+    if (GboardAccessBridge.enabled()) {
+      if (backspace) GboardAccessBridge.backspace(result);
+      else GboardAccessBridge.insert(value, result);
+    } else if (backspace) {
+      result.accept(40, "BACKSPACE_NEEDS_GBOARD_MODE");
+    } else {
+      BridgeIme.commit(value, result);
+    }
   }
 }
