@@ -1,15 +1,18 @@
-# Gboard Mirror Turkish Q v0.2 — experimental LSPosed module
-This is a test, not a confirmed fix.
+# Gboard Mirror Turkish Q v0.3 — experimental LSPosed module
+Independent APK from v0.2, designed for a Windows Turkish Q keyboard and Xiaomi PC Manager 6.0.2.19 mirroring.
 
-Built from successful v0.1 pass-through. v0.2 uses a different applicationId, so it can be installed beside v0.1.
-Disable v0.1 in LSPosed before enabling v0.2. Scope only Gboard (com.google.android.inputmethod.latin). Reboot or force-stop Gboard.
+v0.3 adds:
+- Backspace via InputConnection.deleteSurroundingTextInCodePoints(1,0), with selected-text deletion
+- Forward Delete via deleteSurroundingTextInCodePoints(0,1)
+- AltGr+Q (@), AltGr+E (€), AltGr+T (₺), AltGr+3 (#), AltGr+4 ($), AltGr+7/8/9/0 ({[]}), and other standard Turkish Q third-level characters
+- Shifted digit and punctuation symbols (!, apostrophe, ^, +, %, &, /, (, ), =, ?, _, :, etc.)
+- Keep v0.2 mappings for ğ, ü, ş, ı, ö, ç, i including uppercase and v0.1 printable-key pass-through
 
-DeviceId -100 keyboard-source event mappings: left bracket to ğ/Ğ, right bracket to ü/Ü, semicolon to ş/Ş, slash to ö/Ö, backslash to ç/Ç, I key to dotless ı/I, apostrophe key to dotted i/İ.
-Shift and CapsLock select case using XOR; this needs verification against Xiaomi's forwarded metadata.
-Converted characters are committed through Gboard's InputConnection.commitText; mapped events are consumed. Other printable keys retain v0.1 pass-through.
-Enter, Backspace, Tab, Ctrl/Alt/Meta shortcuts and AltGr are left untouched.
+Install the APK, disable both v0.1 and v0.2 in LSPosed, enable v0.3 and scope only Gboard. Restart Gboard/phone.
+To revert, disable v0.3, re-enable v0.2.
 
-To test: MirrorKeyDiag plus Google Keep, type abc123ğüşöçıi and uppercase with Shift and CapsLock.
-Expected ordinary key: VIEW_PRE_IME, ACTIVITY_DISPATCH, VIEW_DOWN. Expected converted Turkish key: VIEW_PRE_IME and IC_COMMIT_TEXT [ğ] without VIEW_DOWN for punctuation.
-If the module fails, disable v0.2 and re-enable v0.1. The module requires LSPosed, does not modify Xiaomi binaries, and does not use an ADB or PowerShell bridge.
-Do not enter passwords during tests.
+Notes:
+- An actual Turkish Q keyboard and the observed Xiaomi KeyEvent mappings are assumed. Punctuation on some physical keys may need further adjustments.
+- Right Alt (AltGr) must survive Xiaomi mirroring as a modifier on the actual letter. The app also recognizes KEYCODE_AT or @ Unicode when Xiaomi converts it.
+- This does not modify other apps, Xiaomi binaries or Gboard APK.
+- Test in MirrorKeyDiag or Keep with 12@34, punctuation and Backspace. This is a test build, not a confirmed fix.
