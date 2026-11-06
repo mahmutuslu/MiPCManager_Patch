@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+ <string name="access_description">Gboard seciliyken sadece Windows yardimci koprusunden gelen Turkce karakterleri etkin metin alanina ekleme denemesi. Ekran icerigine erisim izni gerektirir. Parola alanlarini atlar.</string>
+</resources>
