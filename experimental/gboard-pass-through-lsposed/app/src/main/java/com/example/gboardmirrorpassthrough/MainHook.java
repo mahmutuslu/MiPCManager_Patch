@@ -100,7 +100,7 @@ public final class MainHook implements IXposedHookLoadPackage {
    case KeyEvent.KEYCODE_EQUALS: return shifted ? "_" : "-";
    case KeyEvent.KEYCODE_PERIOD: return shifted ? ":" : ".";
    case KeyEvent.KEYCODE_COMMA: return shifted ? ";" : ",";
-   case KeyEvent.KEYCODE_GRAVE: return shifted ? "é" : "\\u0022";
+   case KeyEvent.KEYCODE_GRAVE: return shifted ? "é" : Character.toString((char)34);
    default: return null;
   }
  }
