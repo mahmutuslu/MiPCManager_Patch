@@ -1,0 +1,52 @@
+name: Build Android IME APK
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/turkish-ime-bridge-v6]
+    paths:
+      - 'experimental/android-ime/**'
+      - '.github/workflows/android-ime-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: experimental/android-ime
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Android command-line SDK
+        run: |
+          set -euo pipefail
+          export ANDROID_HOME="$HOME/android-sdk"
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          curl --fail --location --retry 3 --output /tmp/android-commandline.zip \
+            https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q /tmp/android-commandline.zip -d /tmp/android-cli
+          mv /tmp/android-cli/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_HOME" "platforms;android-35" "build-tools;35.0.0"
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build unsigned-source debug APK
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xiaomi-Turkce-IME-Debug-APK
+          path: experimental/android-ime/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
