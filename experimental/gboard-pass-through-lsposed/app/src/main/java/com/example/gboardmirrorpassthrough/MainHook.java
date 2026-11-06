@@ -129,7 +129,7 @@ public final class MainHook implements IXposedHookLoadPackage {
    if (forward) return ic.deleteSurroundingTextInCodePoints(0,1);
    return ic.deleteSurroundingTextInCodePoints(1,0);
   } catch (Throwable t) {
-   XposedBridge.log("GboardMirrorTR v0.3 delete failed: "+t);
+   XposedBridge.log("GboardMirrorTR v0.5 delete failed: "+t);
    return false;
   }
  }
@@ -163,6 +163,26 @@ public final class MainHook implements IXposedHookLoadPackage {
      if (!mirrored(e)) return;
      InputConnection ic=connection(p.thisObject);
 
+     // Xiaomi PC Manager maps the physical Turkish-Q Shift+asterisk (?) position
+     // to an UNKNOWN key with no unicode value. This exact event was observed in
+     // MirrorKeyDiag: deviceId=-100 source=0x101 scanCode=0 meta=0x1 flags=0x8.
+     // Do NOT map Unicode 63 universally: Shift+Ö also reports unicode=63!
+     if (key == KeyEvent.KEYCODE_UNKNOWN && e.getScanCode() == 0
+         && e.getUnicodeChar() == 0 && e.isShiftPressed()
+         && e.getRepeatCount() == 0
+         && (e.getFlags() & KeyEvent.FLAG_FROM_SYSTEM) != 0) {
+      try {
+       if (ic != null && ic.commitText("?", 1)) {
+        synchronized (consumedDown) { consumedDown.put(key, true); }
+        XposedBridge.log("GboardMirrorTR v0.5: mapped Xiaomi Shift+UNKNOWN to ?");
+        p.setResult(true);
+        return;
+       }
+      } catch (Throwable error) {
+       XposedBridge.log("GboardMirrorTR v0.5: question mark commit failed: " + error);
+      }
+     }
+
      // Backspace and Delete previously disappeared in Gboard's IME stage.
      if ((key==KeyEvent.KEYCODE_DEL || key==KeyEvent.KEYCODE_FORWARD_DEL) &&
           !ordinaryShortcut(e) && !altGr(e)) {
@@ -184,7 +204,7 @@ public final class MainHook implements IXposedHookLoadPackage {
         p.setResult(true);
         return;
        }
-      } catch(Throwable t) { XposedBridge.log("GboardMirrorTR v0.3 commit failed: "+t); }
+      } catch(Throwable t) { XposedBridge.log("GboardMirrorTR v0.5 commit failed: "+t); }
      }
 
      // v0.1-compatible pass-through for everything else printable.
@@ -209,9 +229,9 @@ public final class MainHook implements IXposedHookLoadPackage {
       p.setResult(false);
     }
    });
-   XposedBridge.log("GboardMirrorTR v0.3: Turkish Q symbols + backspace active for deviceId=-100");
+   XposedBridge.log("GboardMirrorTR v0.5: Turkish Q symbols + backspace active for deviceId=-100");
   } catch(Throwable t) {
-   XposedBridge.log("GboardMirrorTR v0.3: hook unavailable: "+t);
+   XposedBridge.log("GboardMirrorTR v0.5: hook unavailable: "+t);
   }
  }
 }
