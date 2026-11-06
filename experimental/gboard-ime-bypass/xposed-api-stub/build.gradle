@@ -1,2 +1,6 @@
 plugins { id 'java-library' }
 java { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+dependencies {
+    // AndroidAppHelper stub refers to android.app.Application, which is supplied by the SDK.
+    compileOnly files("${System.getenv('ANDROID_HOME')}/platforms/android-35/android.jar")
+}
