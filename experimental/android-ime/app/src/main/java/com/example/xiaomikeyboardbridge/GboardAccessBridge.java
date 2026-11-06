@@ -47,8 +47,17 @@ public final class GboardAccessBridge extends AccessibilityService {
       if(oldText.length()>4096) { completion.accept(34,"TEXT_TOO_LONG"); return; }
       int start=target.getTextSelectionStart();
       int end=target.getTextSelectionEnd();
-      if(start<0 || end<start || end>oldText.length()) {
-        completion.accept(35,"SELECTION_UNKNOWN"); return;
+      // Gboard in Xiaomi mirroring sometimes exposes editable text but no
+      // accessibility selection. In this experimental mode ONLY, append at
+      // the end (or erase from the end) rather than rejecting all input.
+      // For safety do not use this fallback on long existing fields.
+      boolean unknownSelection = start<0 || end<start || end>oldText.length();
+      if(unknownSelection) {
+        if(oldText.length()>256) {
+          completion.accept(35,"SELECTION_UNKNOWN_LONG_TEXT"); return;
+        }
+        start=oldText.length();
+        end=start;
       }
       int replaceStart=start;
       if(backspace && start==end) {
