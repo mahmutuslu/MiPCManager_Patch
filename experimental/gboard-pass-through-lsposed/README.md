@@ -1,10 +1,15 @@
-# Gboard Mirror Turkish Q v0.5 — Xiaomi question mark fix
-Observed logs (MirrorKeyDiag):
-* physical * = KEYCODE_NUMPAD_MULTIPLY with unicode 42: works
-* physical Shift+* (?) = KEYCODE_UNKNOWN with deviceId=-100, source 0x101, meta=0x1, scanCode=0, flags=0x8, unicode=0: no text
-* physical Shift+Ö = KEYCODE_SLASH, unicode 63: v0.4 correctly prints Ö via physical-position mapping
+# Gboard Turkish Q LSPosed v0.6 — Ctrl+A / Ctrl+C / Ctrl+V
+An isolated follow-up to working v0.5 for Xiaomi PC Manager mirroring on a Turkish Q Windows keyboard.
 
-v0.5 maps *only* the observed Shift+KEYCODE_UNKNOWN from Xiaomi keyboard source and deviceId=-100 to ? via the active Gboard InputConnection. Preserves all other v0.4 mappings, Backspace, Turkish letters, @ and punctuation.
-This is a cautious experimental heuristic; another unmapped Shift+unknown key on the same mirror might produce ? as well. Test in MirrorKeyDiag and Keep.
-Different applicationId so install beside v0.4. Disable v0.4 LSPosed module, enable v0.5 and scope only Gboard. Reboot or restart Gboard. Revert by turning off v0.5 and re-enabling v0.4.
-Not a change to Xiaomi PC Manager or Gboard installation; not a generic fix for unmapped keys.
+v0.6 adds focused editor context actions via Android InputConnection.performContextMenuAction:
+- Ctrl+A → android.R.id.selectAll
+- Ctrl+C → android.R.id.copy
+- Ctrl+V → android.R.id.paste
+
+Only for Xiaomi synthetic deviceId=-100 keyboard source in the Gboard IME aeht.onKeyDown; only with Ctrl down and no Alt/Meta/Shift; only on repeat 0. If editor declines, module logs and leaves original behavior. It does not capture clipboard contents or need an ADB bridge.
+All v0.5 Turkish characters, @, Backspace, punctuation including Shift+UNKNOWN → ? stay unchanged.
+
+Test in Google Keep: Type deneme 123, Ctrl+A, Ctrl+C, tap a second line, Ctrl+V. Retest AltGr+Q, Backspace and ?.
+LSPosed: Disable v0.5 and other old versions, install v0.6, scope to Gboard only, restart phone. Revert via LSPosed toggle to v0.5.
+If shortcuts still fail, collect Ctrl+A/C/V logs in MirrorKeyDiag; Xiaomi may omit the Ctrl modifier. Do not assume this test build is proven.
+Context menu actions are editor-dependent. This does not implement Windows OS global shortcuts.
