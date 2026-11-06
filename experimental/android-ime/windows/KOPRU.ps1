@@ -2,7 +2,7 @@
 param([string]$Adb='C:\platform-tools\adb.exe',[Parameter(Mandatory=$true)][string]$Token)
 if (!(Test-Path $Adb)) { throw "adb.exe bulunamadi: $Adb" }
 Add-Type -ReferencedAssemblies @('System.Windows.Forms','System.Drawing') -TypeDefinition @'
-using System; using System.Collections.Concurrent; using System.Diagnostics; using System.Runtime.InteropServices; using System.Text; using System.Threading; using System.Windows.Forms;
+using System; using System.Collections.Concurrent; using System.Diagnostics; using System.Runtime.InteropServices; using System.Threading; using System.Windows.Forms;
 public static class TurkishBridgeHook {
   [StructLayout(LayoutKind.Sequential)] private struct Kbd { public int vkCode; public int scanCode; public int flags; public int time; public IntPtr extra; }
   private delegate IntPtr HookProc(int n,IntPtr w,IntPtr l);
@@ -12,13 +12,31 @@ public static class TurkishBridgeHook {
   [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd,out uint pid);
   [DllImport("user32.dll")] private static extern bool GetKeyboardState(byte[] s);
-  [DllImport("user32.dll")] private static extern IntPtr GetKeyboardLayout(uint thread);
-  [DllImport("user32.dll")] private static extern int ToUnicodeEx(uint vk,uint sc,byte[] key, StringBuilder buf,int len,uint flags,IntPtr layout);
   [DllImport("kernel32.dll")] private static extern IntPtr GetModuleHandle(string name);
   private static IntPtr hook; private static HookProc handler = Handle;
   private static BlockingCollection<string> queue = new BlockingCollection<string>();
   private static string adb, token; private static bool[] ignored=new bool[256];
-  private static bool MirrorFocus() { try { uint p; GetWindowThreadProcessId(GetForegroundWindow(),out p); return Process.GetProcessById((int)p).ProcessName.Equals("MiScreenShare",StringComparison.OrdinalIgnoreCase); } catch { return false; } }
+  // Turkish Q VK mapping observed in Windows diagnostics; independent of the target's active input language.
+  private static string TurkishChar(int vk, bool shift) {
+    switch(vk) {
+      case 0xDB: return shift ? "Ğ" : "ğ";  // VK_OEM_4
+      case 0xDD: return shift ? "Ü" : "ü";  // VK_OEM_6
+      case 0xBA: return shift ? "Ş" : "ş";  // VK_OEM_1
+      case 0x49: return shift ? "I" : "ı";  // VK_I, dotless uppercase I
+      case 0xBF: return shift ? "Ö" : "ö";  // VK_OEM_2
+      case 0xDC: return shift ? "Ç" : "ç";  // VK_OEM_5
+      default: return null;
+    }
+  }
+  private static bool MirrorFocus() {
+    try {
+      uint p;
+      GetWindowThreadProcessId(GetForegroundWindow(),out p);
+      string name=Process.GetProcessById((int)p).ProcessName;
+      return name.Equals("MiScreenShare",StringComparison.OrdinalIgnoreCase) ||
+             name.Equals("XiaomiPCManager",StringComparison.OrdinalIgnoreCase);
+    } catch { return false; }
+  }
   private static IntPtr Handle(int n,IntPtr w,IntPtr l) {
     if(n>=0) { int msg=w.ToInt32(); Kbd k=(Kbd)Marshal.PtrToStructure(l,typeof(Kbd));
       bool down=msg==0x100||msg==0x104, up=msg==0x101||msg==0x105;
@@ -27,10 +45,9 @@ public static class TurkishBridgeHook {
         if(down&&MirrorFocus()) {
           byte[] state=new byte[256]; GetKeyboardState(state);
           if((state[0x11]&0x80)==0&&(state[0x12]&0x80)==0&&(state[0x5B]&0x80)==0&&(state[0x5C]&0x80)==0) {
-            StringBuilder chars=new StringBuilder(8); uint pid; uint tid=GetWindowThreadProcessId(GetForegroundWindow(),out pid);
-            int cnt=ToUnicodeEx((uint)k.vkCode,(uint)k.scanCode,state,chars,8,0,GetKeyboardLayout(tid));
-            if(cnt==1 && "ğĞüÜşŞıİöÖçÇ".Contains(chars.ToString())) {
-              if(!ignored[k.vkCode]) queue.Add(chars.ToString());
+            string ch=TurkishChar(k.vkCode,(state[0x10]&0x80)!=0||(state[0xA0]&0x80)!=0||(state[0xA1]&0x80)!=0);
+            if(ch!=null) {
+              if(!ignored[k.vkCode]) queue.Add(ch);
               ignored[k.vkCode]=true; return (IntPtr)1;
             }
           }
@@ -54,6 +71,6 @@ public static class TurkishBridgeHook {
   }
 }
 '@
-Write-Host 'Yalniz MiScreenShare odaktayken Turkce Q karakterlerini Android IME ye gonderir.'
+Write-Host 'V6.1: Turkce Q fiziksel tus haritasi. Xiaomi ekran paylasimi odaktayken calisir.'
 Write-Host 'Kapatmak icin bu pencereyi kapat veya Ctrl+C kullan.'
 [TurkishBridgeHook]::Start($Adb,$Token)
