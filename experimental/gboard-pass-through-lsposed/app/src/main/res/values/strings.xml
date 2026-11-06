@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
- <string name="module_description">Experimental Turkish Q Unicode mapping in Gboard for Xiaomi mirrored keyboard events (deviceId=-100).</string>
+ <string name="module_description">Experimental Turkish Q Unicode, punctuation, AltGr symbols and Backspace for Gboard on Xiaomi mirroring.</string>
  <string-array name="xposed_scope">
   <item>com.google.android.inputmethod.latin</item>
  </string-array>
