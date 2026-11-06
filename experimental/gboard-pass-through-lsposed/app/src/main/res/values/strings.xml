@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+ <string name="module_description">Experimental: bypass Xiaomi mirrored printable keys in Gboard&#39;s IME handler so Android views can handle them.</string>
+ <string-array name="xposed_scope">
+  <item>com.google.android.inputmethod.latin</item>
+ </string-array>
+</resources>
