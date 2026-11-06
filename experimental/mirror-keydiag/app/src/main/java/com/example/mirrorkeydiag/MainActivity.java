@@ -26,7 +26,7 @@ public class MainActivity extends Activity {
   private String event(KeyEvent k) {
     return "action="+k.getAction()+" key="+KeyEvent.keyCodeToString(k.getKeyCode())+
       " deviceId="+k.getDeviceId()+" source=0x"+Integer.toHexString(k.getSource())+
-      " displayId="+k.getDisplayId()+" scanCode="+k.getScanCode()+
+      " scanCode="+k.getScanCode()+
       " meta=0x"+Integer.toHexString(k.getMetaState())+
       " flags=0x"+Integer.toHexString(k.getFlags())+
       " unicode="+k.getUnicodeChar()+" repeat="+k.getRepeatCount();
