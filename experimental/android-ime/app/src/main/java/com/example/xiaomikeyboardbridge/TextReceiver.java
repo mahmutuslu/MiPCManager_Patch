@@ -14,7 +14,7 @@ public final class TextReceiver extends BroadcastReceiver {
     }
     String value = i.getStringExtra("char");
     if(value == null || value.codePointCount(0, value.length()) != 1 ||
-        !"ğĞüÜşŞıİöÖçÇ".contains(value)) {
+        !"ğĞüÜşŞıİiIöÖçÇ".contains(value)) {
       setResultCode(26); setResultData("INVALID_CHARACTER"); return;
     }
     final PendingResult pending = goAsync();
