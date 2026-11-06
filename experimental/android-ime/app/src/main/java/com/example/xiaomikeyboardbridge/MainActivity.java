@@ -27,7 +27,10 @@ public final class MainActivity extends Activity {
     Button choose = new Button(this); choose.setText("2 - Klavyeyi seç");
     choose.setOnClickListener(v -> ((InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE)).showInputMethodPicker());
     l.addView(choose);
-    TextView w = new TextView(this); w.setText("Bu test klavyesi ekranda tuş paneli göstermez. Test bitince önceki klavyenize dönün.");
+    Button access = new Button(this); access.setText("3 - Gboard destegi: Erisilebilirlik ayarlari");
+    access.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+    l.addView(access);
+    TextView w = new TextView(this); w.setText("Gboard modu: Gboard varsayilan klavye olarak secilir; Xiaomi Gboard Turkce Q Kopru erisilebilirlik hizmeti ayarlardan acilir. Erisilebilirlik izni ekrandaki metinlere erisebilir: test disinda kapatin. Parola alanlari atlanir. Eski IME modu da korunur.");
     l.addView(w); setContentView(l);
   }
 }
