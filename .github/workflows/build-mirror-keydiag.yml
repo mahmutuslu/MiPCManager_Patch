@@ -18,7 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      issues: write
     steps:
       - uses: actions/checkout@v4
 
@@ -28,20 +27,27 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Prepare Android tools
-        uses: android-actions/setup-android@v3
-
-      - name: Install SDK
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Use preinstalled Android SDK
+        shell: bash
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME}"
+          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+          if test ! -x "$SDKMANAGER"; then
+            SDKMANAGER="$(command -v sdkmanager)"
+          fi
+          echo "Using $SDKMANAGER"
+          "$SDKMANAGER" --version
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" 'platforms;android-35' 'build-tools;35.0.0'
 
       - name: Prepare Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Compile and capture errors
-        shell: bash
+      - name: Compile APK
         working-directory: experimental/mirror-keydiag
+        shell: bash
         run: |
           set -o pipefail
           gradle --no-daemon --stacktrace assembleDebug 2>&1 | tee "${GITHUB_WORKSPACE}/mirror-build.log"
@@ -53,28 +59,10 @@ jobs:
           path: experimental/mirror-keydiag/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-      - name: Publish diagnostic error to repository issue
+      - name: Upload build diagnostic logs on failure
         if: ${{ failure() }}
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          {
-            echo "## MirrorKeyDiag GitHub Actions failure"
-            echo
-            echo "- Run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            echo "- Commit: ${GITHUB_SHA}"
-            echo "- Branch: ${GITHUB_REF_NAME}"
-            echo
-            echo "### Gradle output (last 120 lines, if available)"
-            echo '~~~text'
-            if test -f mirror-build.log; then
-              tail -n 120 mirror-build.log | sed -E 's/(token|password|secret|key)=([^[:space:]]+)/\1=[REDACTED]/Ig'
-            else
-              echo "Build step was never reached. Failure occurred during checkout, Java, Android SDK, or Gradle setup."
-            fi
-            echo '~~~'
-          } > /tmp/mirror-diag-issue.md
-          gh issue create --repo "${GITHUB_REPOSITORY}" \
-            --title "MirrorKeyDiag build failure (run ${GITHUB_RUN_ID})" \
-            --body-file /tmp/mirror-diag-issue.md
+        uses: actions/upload-artifact@v4
+        with:
+          name: MirrorKeyDiag-build-logs
+          path: mirror-build.log
+          if-no-files-found: ignore
