@@ -3,11 +3,11 @@ android {
  namespace 'com.example.gboardmirrorpassthrough'
  compileSdk 35
  defaultConfig {
-  applicationId 'com.example.gboardmirrortrv03'
+  applicationId 'com.example.gboardmirrortrv04'
   minSdk 26
   targetSdk 28
-  versionCode 3
-  versionName '0.3-experimental'
+  versionCode 4
+  versionName '0.4-experimental'
  }
  compileOptions {
   sourceCompatibility JavaVersion.VERSION_17
