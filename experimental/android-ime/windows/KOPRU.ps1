@@ -60,11 +60,11 @@ public static class TurkishBridgeHook {
     adb=adbPath; token=secret;
     System.Console.OutputEncoding = new System.Text.UTF8Encoding(false);
     Thread worker=new Thread(()=>{ foreach(string ch in queue.GetConsumingEnumerable()) {
-      try { ProcessStartInfo psi=new ProcessStartInfo(adb,"shell am broadcast -a com.example.xiaomikeyboardbridge.SEND -n com.example.xiaomikeyboardbridge/.TextReceiver --es token "+token+" --es char "+ch);
+      try { bool ascii=ch=="i" || ch=="I"; string args=ascii ? "shell input text "+ch : "shell am broadcast -a com.example.xiaomikeyboardbridge.SEND -n com.example.xiaomikeyboardbridge/.TextReceiver --es token "+token+" --es char "+ch; ProcessStartInfo psi=new ProcessStartInfo(adb,args);
         psi.UseShellExecute=false;psi.CreateNoWindow=true;psi.RedirectStandardOutput=true;psi.RedirectStandardError=true;
         using(Process p=Process.Start(psi)){ string output=p.StandardOutput.ReadToEnd(); string error=p.StandardError.ReadToEnd(); p.WaitForExit();
           System.Console.WriteLine("TUS: U+"+((int)ch[0]).ToString("X4")+" / "+output.Trim());
-          if(p.ExitCode!=0 || !output.Contains("INSERT_VERIFIED")) System.Console.WriteLine("UYARI: Android gonderimi kesin dogrulanamadi. "+error.Trim());
+          if(p.ExitCode!=0 || (!ascii && !output.Contains("INSERT_VERIFIED"))) System.Console.WriteLine("UYARI: Android gonderimi kesin dogrulanamadi. "+error.Trim());
         }
       } catch(Exception e){System.Console.WriteLine("Gonderim hatasi: "+e.Message);} }
     }); worker.IsBackground=true;worker.Start();
