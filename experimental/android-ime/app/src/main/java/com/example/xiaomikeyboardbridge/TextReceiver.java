@@ -30,9 +30,11 @@ public final class TextReceiver extends BroadcastReceiver {
       }
     }
     final PendingResult pending = goAsync();
-    BridgeIme.commit(value, (code, status) -> {
+    java.util.function.BiConsumer<Integer,String> result = (code, status) -> {
       try { pending.setResultCode(code); pending.setResultData(status); }
       finally { pending.finish(); }
-    });
+    };
+    if (GboardAccessBridge.enabled()) GboardAccessBridge.insert(value, result);
+    else BridgeIme.commit(value, result);
   }
 }
