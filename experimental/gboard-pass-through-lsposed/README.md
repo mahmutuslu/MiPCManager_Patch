@@ -1,8 +1,15 @@
-# Experimental LSPosed Gboard Mirror Pass-through
-This **is not a confirmed fix**. Built for Gboard APK inspected on 2026-11-06.
-Requires rooted phone with working LSPosed. Only scope **Gboard** (com.google.android.inputmethod.latin). Avoid enabling system-wide or on Xiaomi Mirror.
-The hook forces Gboard's `aeht.onKeyDown/onKeyUp` to report UNHANDLED for **printable mirrored KeyEvents with deviceId=-100** and no Ctrl/Alt/Meta. Android TextView may then handle those as XiaoAI's does.
-The experiment does **not** repair Turkish Q mapping; that is a separate Windows-to-Android layout problem. No ADB, clipboard or network behavior. No special permissions.
-If Gboard is updated/obfuscation changes, the target class may not exist and module intentionally does nothing.
-To revert: disable module in LSPosed, force-stop Gboard / reboot.
-Risk: predictive composition, editing and some apps may behave differently. Use test editor first and do not type sensitive data during troubleshooting.
+# Gboard Mirror Turkish Q v0.2 — experimental LSPosed module
+This is a test, not a confirmed fix.
+
+Built from successful v0.1 pass-through. v0.2 uses a different applicationId, so it can be installed beside v0.1.
+Disable v0.1 in LSPosed before enabling v0.2. Scope only Gboard (com.google.android.inputmethod.latin). Reboot or force-stop Gboard.
+
+DeviceId -100 keyboard-source event mappings: left bracket to ğ/Ğ, right bracket to ü/Ü, semicolon to ş/Ş, slash to ö/Ö, backslash to ç/Ç, I key to dotless ı/I, apostrophe key to dotted i/İ.
+Shift and CapsLock select case using XOR; this needs verification against Xiaomi's forwarded metadata.
+Converted characters are committed through Gboard's InputConnection.commitText; mapped events are consumed. Other printable keys retain v0.1 pass-through.
+Enter, Backspace, Tab, Ctrl/Alt/Meta shortcuts and AltGr are left untouched.
+
+To test: MirrorKeyDiag plus Google Keep, type abc123ğüşöçıi and uppercase with Shift and CapsLock.
+Expected ordinary key: VIEW_PRE_IME, ACTIVITY_DISPATCH, VIEW_DOWN. Expected converted Turkish key: VIEW_PRE_IME and IC_COMMIT_TEXT [ğ] without VIEW_DOWN for punctuation.
+If the module fails, disable v0.2 and re-enable v0.1. The module requires LSPosed, does not modify Xiaomi binaries, and does not use an ADB or PowerShell bridge.
+Do not enter passwords during tests.
