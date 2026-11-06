@@ -19,12 +19,12 @@ public static class TurkishBridgeHook {
   // Turkish Q VK mapping observed in Windows diagnostics; independent of the target's active input language.
   private static string TurkishChar(int vk, bool shift) {
     switch(vk) {
-      case 0xDB: return shift ? "Ğ" : "ğ";  // VK_OEM_4
-      case 0xDD: return shift ? "Ü" : "ü";  // VK_OEM_6
-      case 0xBA: return shift ? "Ş" : "ş";  // VK_OEM_1
-      case 0x49: return shift ? "I" : "ı";  // VK_I, dotless uppercase I
-      case 0xBF: return shift ? "Ö" : "ö";  // VK_OEM_2
-      case 0xDC: return shift ? "Ç" : "ç";  // VK_OEM_5
+      case 0xDB: return shift ? "\u011E" : "\u011F";  // VK_OEM_4
+      case 0xDD: return shift ? "\u00DC" : "\u00FC";  // VK_OEM_6
+      case 0xBA: return shift ? "\u015E" : "\u015F";  // VK_OEM_1
+      case 0x49: return shift ? "I" : "\u0131";  // VK_I, dotless uppercase I
+      case 0xBF: return shift ? "\u00D6" : "\u00F6";  // VK_OEM_2
+      case 0xDC: return shift ? "\u00C7" : "\u00E7";  // VK_OEM_5
       default: return null;
     }
   }
@@ -57,11 +57,12 @@ public static class TurkishBridgeHook {
   }
   public static void Start(string adbPath,string secret) {
     adb=adbPath; token=secret;
+    System.Console.OutputEncoding = new System.Text.UTF8Encoding(false);
     Thread worker=new Thread(()=>{ foreach(string ch in queue.GetConsumingEnumerable()) {
       try { ProcessStartInfo psi=new ProcessStartInfo(adb,"shell am broadcast -a com.example.xiaomikeyboardbridge.SEND -n com.example.xiaomikeyboardbridge/.TextReceiver --es token "+token+" --es char "+ch);
         psi.UseShellExecute=false;psi.CreateNoWindow=true;psi.RedirectStandardOutput=true;psi.RedirectStandardError=true;
         using(Process p=Process.Start(psi)){ string output=p.StandardOutput.ReadToEnd(); string error=p.StandardError.ReadToEnd(); p.WaitForExit();
-          System.Console.WriteLine("TUS: "+ch+" / "+output.Trim());
+          System.Console.WriteLine("TUS: U+"+((int)ch[0]).ToString("X4")+" / "+output.Trim());
           if(p.ExitCode!=0 || !output.Contains("INSERT_VERIFIED")) System.Console.WriteLine("UYARI: Android gonderimi kesin dogrulanamadi. "+error.Trim());
         }
       } catch(Exception e){System.Console.WriteLine("Gonderim hatasi: "+e.Message);} }
@@ -73,7 +74,7 @@ public static class TurkishBridgeHook {
   }
 }
 '@
-Write-Host 'V6.4: Turkce Q fiziksel tuslarini Xiaomi penceresinde yakala, Android IME uzerinden ekle.'
+Write-Host 'V6.5: Turkce Q fiziksel tuslarini Xiaomi penceresinde yakala, Android IME uzerinden ekle.'
 Write-Host 'Not: ADB gecikmesi olabilir. Normal harflerle arka arkaya yazarken sira degisebilir.'
 Write-Host 'Kapatmak icin bu pencereyi kapat veya Ctrl+C kullan.'
 [TurkishBridgeHook]::Start($Adb,$Token)
