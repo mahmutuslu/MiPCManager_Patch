@@ -48,7 +48,8 @@ public static class TurkishBridgeHook {
           if(GetAsyncKeyState(0x11)>=0 && GetAsyncKeyState(0x12)>=0 && GetAsyncKeyState(0x5B)>=0 && GetAsyncKeyState(0x5C)>=0) {
             bool shiftDown=GetAsyncKeyState(0x10)<0 || GetAsyncKeyState(0xA0)<0 || GetAsyncKeyState(0xA1)<0;
             bool capsOn=(GetKeyState(0x14) & 1)!=0;
-            string ch=TurkishChar(k.vkCode, shiftDown ^ capsOn);
+            // Turkish Q: Shift+2 is apostrophe, unlike US Shift+2 (@).
+            string ch=(k.vkCode==0x32 && shiftDown) ? "\u0027" : TurkishChar(k.vkCode, shiftDown ^ capsOn);
             if(ch!=null) {
               if(!ignored[k.vkCode]) queue.Add(ch);
               ignored[k.vkCode]=true; return (IntPtr)1;
@@ -63,11 +64,11 @@ public static class TurkishBridgeHook {
     adb=adbPath; token=secret;
     System.Console.OutputEncoding = new System.Text.UTF8Encoding(false);
     Thread worker=new Thread(()=>{ foreach(string ch in queue.GetConsumingEnumerable()) {
-      try { bool ascii=ch=="i" || ch=="I"; string args=ascii ? "shell input text "+ch : "shell am broadcast -a com.example.xiaomikeyboardbridge.SEND -n com.example.xiaomikeyboardbridge/.TextReceiver --es token "+token+" --es char "+ch; ProcessStartInfo psi=new ProcessStartInfo(adb,args);
+      try { bool ascii=ch=="i" || ch=="I"; bool apostrophe=ch=="\u0027"; string args=apostrophe ? "shell input keyevent 75" : (ascii ? "shell input text "+ch : "shell am broadcast -a com.example.xiaomikeyboardbridge.SEND -n com.example.xiaomikeyboardbridge/.TextReceiver --es token "+token+" --es char "+ch); ProcessStartInfo psi=new ProcessStartInfo(adb,args);
         psi.UseShellExecute=false;psi.CreateNoWindow=true;psi.RedirectStandardOutput=true;psi.RedirectStandardError=true;
         using(Process p=Process.Start(psi)){ string output=p.StandardOutput.ReadToEnd(); string error=p.StandardError.ReadToEnd(); p.WaitForExit();
           System.Console.WriteLine("TUS: U+"+((int)ch[0]).ToString("X4")+" / "+output.Trim());
-          if(p.ExitCode!=0 || (!ascii && !output.Contains("INSERT_VERIFIED"))) System.Console.WriteLine("UYARI: Android gonderimi kesin dogrulanamadi. "+error.Trim());
+          if(p.ExitCode!=0 || (!ascii && !apostrophe && !output.Contains("INSERT_VERIFIED"))) System.Console.WriteLine("UYARI: Android gonderimi kesin dogrulanamadi. "+error.Trim());
         }
       } catch(Exception e){System.Console.WriteLine("Gonderim hatasi: "+e.Message);} }
     }); worker.IsBackground=true;worker.Start();
@@ -78,7 +79,7 @@ public static class TurkishBridgeHook {
   }
 }
 '@
-Write-Host 'V6.7: Turkce Q fiziksel tuslarini Xiaomi penceresinde yakala, Android IME uzerinden ekle.'
+Write-Host 'V6.8: Turkce Q fiziksel tuslarini Xiaomi penceresinde yakala, Android IME uzerinden ekle.'
 Write-Host 'Not: ADB gecikmesi olabilir. Normal harflerle arka arkaya yazarken sira degisebilir.'
 Write-Host 'Kapatmak icin bu pencereyi kapat veya Ctrl+C kullan.'
 [TurkishBridgeHook]::Start($Adb,$Token)
