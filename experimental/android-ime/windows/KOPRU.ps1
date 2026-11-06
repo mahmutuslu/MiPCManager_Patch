@@ -12,6 +12,7 @@ public static class TurkishBridgeHook {
   [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd,out uint pid);
   [DllImport("user32.dll")] private static extern short GetAsyncKeyState(int vk);
+  [DllImport("user32.dll")] private static extern short GetKeyState(int vk);
   [DllImport("kernel32.dll")] private static extern IntPtr GetModuleHandle(string name);
   private static IntPtr hook; private static HookProc handler = Handle;
   private static BlockingCollection<string> queue = new BlockingCollection<string>();
@@ -45,7 +46,9 @@ public static class TurkishBridgeHook {
         if(up&&ignored[k.vkCode]) { ignored[k.vkCode]=false; return (IntPtr)1; }
         if(down&&MirrorFocus()) {
           if(GetAsyncKeyState(0x11)>=0 && GetAsyncKeyState(0x12)>=0 && GetAsyncKeyState(0x5B)>=0 && GetAsyncKeyState(0x5C)>=0) {
-            string ch=TurkishChar(k.vkCode,GetAsyncKeyState(0x10)<0 || GetAsyncKeyState(0xA0)<0 || GetAsyncKeyState(0xA1)<0);
+            bool shiftDown=GetAsyncKeyState(0x10)<0 || GetAsyncKeyState(0xA0)<0 || GetAsyncKeyState(0xA1)<0;
+            bool capsOn=(GetKeyState(0x14) & 1)!=0;
+            string ch=TurkishChar(k.vkCode, shiftDown ^ capsOn);
             if(ch!=null) {
               if(!ignored[k.vkCode]) queue.Add(ch);
               ignored[k.vkCode]=true; return (IntPtr)1;
@@ -75,7 +78,7 @@ public static class TurkishBridgeHook {
   }
 }
 '@
-Write-Host 'V6.6: Turkce Q fiziksel tuslarini Xiaomi penceresinde yakala, Android IME uzerinden ekle.'
+Write-Host 'V6.7: Turkce Q fiziksel tuslarini Xiaomi penceresinde yakala, Android IME uzerinden ekle.'
 Write-Host 'Not: ADB gecikmesi olabilir. Normal harflerle arka arkaya yazarken sira degisebilir.'
 Write-Host 'Kapatmak icin bu pencereyi kapat veya Ctrl+C kullan.'
 [TurkishBridgeHook]::Start($Adb,$Token)
