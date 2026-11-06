@@ -11,7 +11,7 @@ public static class TurkishBridgeHook {
   [DllImport("user32.dll")] private static extern IntPtr CallNextHookEx(IntPtr hook,int n,IntPtr w,IntPtr l);
   [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hwnd,out uint pid);
-  [DllImport("user32.dll")] private static extern bool GetKeyboardState(byte[] s);
+  [DllImport("user32.dll")] private static extern short GetAsyncKeyState(int vk);
   [DllImport("kernel32.dll")] private static extern IntPtr GetModuleHandle(string name);
   private static IntPtr hook; private static HookProc handler = Handle;
   private static BlockingCollection<string> queue = new BlockingCollection<string>();
@@ -43,9 +43,8 @@ public static class TurkishBridgeHook {
       if(k.vkCode>=0&&k.vkCode<256&&(down||up)) {
         if(up&&ignored[k.vkCode]) { ignored[k.vkCode]=false; return (IntPtr)1; }
         if(down&&MirrorFocus()) {
-          byte[] state=new byte[256]; GetKeyboardState(state);
-          if((state[0x11]&0x80)==0&&(state[0x12]&0x80)==0&&(state[0x5B]&0x80)==0&&(state[0x5C]&0x80)==0) {
-            string ch=TurkishChar(k.vkCode,(state[0x10]&0x80)!=0||(state[0xA0]&0x80)!=0||(state[0xA1]&0x80)!=0);
+          if(GetAsyncKeyState(0x11)>=0 && GetAsyncKeyState(0x12)>=0 && GetAsyncKeyState(0x5B)>=0 && GetAsyncKeyState(0x5C)>=0) {
+            string ch=TurkishChar(k.vkCode,GetAsyncKeyState(0x10)<0 || GetAsyncKeyState(0xA0)<0 || GetAsyncKeyState(0xA1)<0);
             if(ch!=null) {
               if(!ignored[k.vkCode]) queue.Add(ch);
               ignored[k.vkCode]=true; return (IntPtr)1;
@@ -61,7 +60,10 @@ public static class TurkishBridgeHook {
     Thread worker=new Thread(()=>{ foreach(string ch in queue.GetConsumingEnumerable()) {
       try { ProcessStartInfo psi=new ProcessStartInfo(adb,"shell am broadcast -a com.example.xiaomikeyboardbridge.SEND -n com.example.xiaomikeyboardbridge/.TextReceiver --es token "+token+" --es char "+ch);
         psi.UseShellExecute=false;psi.CreateNoWindow=true;psi.RedirectStandardOutput=true;psi.RedirectStandardError=true;
-        using(Process p=Process.Start(psi)){ p.StandardOutput.ReadToEnd();p.StandardError.ReadToEnd();p.WaitForExit(); }
+        using(Process p=Process.Start(psi)){ string output=p.StandardOutput.ReadToEnd(); string error=p.StandardError.ReadToEnd(); p.WaitForExit();
+          System.Console.WriteLine("TUS: "+ch+" / "+output.Trim());
+          if(p.ExitCode!=0 || !output.Contains("INSERT_VERIFIED")) System.Console.WriteLine("UYARI: Android gonderimi kesin dogrulanamadi. "+error.Trim());
+        }
       } catch(Exception e){System.Console.WriteLine("Gonderim hatasi: "+e.Message);} }
     }); worker.IsBackground=true;worker.Start();
     hook=SetWindowsHookEx(13,handler,GetModuleHandle(null),0);
@@ -71,6 +73,7 @@ public static class TurkishBridgeHook {
   }
 }
 '@
-Write-Host 'V6.1: Turkce Q fiziksel tus haritasi. Xiaomi ekran paylasimi odaktayken calisir.'
+Write-Host 'V6.4: Turkce Q fiziksel tuslarini Xiaomi penceresinde yakala, Android IME uzerinden ekle.'
+Write-Host 'Not: ADB gecikmesi olabilir. Normal harflerle arka arkaya yazarken sira degisebilir.'
 Write-Host 'Kapatmak icin bu pencereyi kapat veya Ctrl+C kullan.'
 [TurkishBridgeHook]::Start($Adb,$Token)
