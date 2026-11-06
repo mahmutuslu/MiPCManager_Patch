@@ -6,6 +6,11 @@ on:
     paths:
       - 'experimental/mirror-keydiag/**'
       - '.github/workflows/build-mirror-keydiag.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'experimental/mirror-keydiag/**'
+      - '.github/workflows/build-mirror-keydiag.yml'
   workflow_dispatch:
 
 jobs:
