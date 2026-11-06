@@ -22,7 +22,8 @@ public static class TurkishBridgeHook {
       case 0xDB: return shift ? "\u011E" : "\u011F";  // VK_OEM_4
       case 0xDD: return shift ? "\u00DC" : "\u00FC";  // VK_OEM_6
       case 0xBA: return shift ? "\u015E" : "\u015F";  // VK_OEM_1
-      case 0x49: return shift ? "I" : "\u0131";  // VK_I, dotless uppercase I
+      case 0x49: return shift ? "I" : "\u0131";  // dotless i / I
+      case 0xDE: return shift ? "\u0130" : "i"; // dotted i / capital dotted I
       case 0xBF: return shift ? "\u00D6" : "\u00F6";  // VK_OEM_2
       case 0xDC: return shift ? "\u00C7" : "\u00E7";  // VK_OEM_5
       default: return null;
@@ -74,7 +75,7 @@ public static class TurkishBridgeHook {
   }
 }
 '@
-Write-Host 'V6.5: Turkce Q fiziksel tuslarini Xiaomi penceresinde yakala, Android IME uzerinden ekle.'
+Write-Host 'V6.6: Turkce Q fiziksel tuslarini Xiaomi penceresinde yakala, Android IME uzerinden ekle.'
 Write-Host 'Not: ADB gecikmesi olabilir. Normal harflerle arka arkaya yazarken sira degisebilir.'
 Write-Host 'Kapatmak icin bu pencereyi kapat veya Ctrl+C kullan.'
 [TurkishBridgeHook]::Start($Adb,$Token)
