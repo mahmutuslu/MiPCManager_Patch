@@ -96,8 +96,8 @@ public final class MainHook implements IXposedHookLoadPackage {
    case KeyEvent.KEYCODE_8: return shifted ? "(" : null;
    case KeyEvent.KEYCODE_9: return shifted ? ")" : null;
    case KeyEvent.KEYCODE_0: return shifted ? "=" : null;
-   case KeyEvent.KEYCODE_MINUS: return shifted ? "?" : "*";
-   case KeyEvent.KEYCODE_EQUALS: return shifted ? "_" : "-";
+   case KeyEvent.KEYCODE_MINUS: return shifted ? "_" : "-";
+   case KeyEvent.KEYCODE_EQUALS: return shifted ? "?" : "*";
    case KeyEvent.KEYCODE_PERIOD: return shifted ? ":" : ".";
    case KeyEvent.KEYCODE_COMMA: return shifted ? ";" : ",";
    case KeyEvent.KEYCODE_GRAVE: return shifted ? "é" : Character.toString((char)34);
