@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
- <string name="module_description">Experimental v0.5 Turkish Q: fix Shift + star question mark via Xiaomi UNKNOWN key event; previous mappings retained.</string>
+ <string name="module_description">Experimental v0.6 Turkish Q: Ctrl+A/C/V Android text editing actions added; previous mappings retained.</string>
  <string-array name="xposed_scope">
   <item>com.google.android.inputmethod.latin</item>
  </string-array>
