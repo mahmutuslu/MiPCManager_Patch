@@ -1,4 +1,4 @@
-name: Build Gboard Turkish Q v0.6 LSPosed APK
+name: Build and publish Gboard Turkish Q v0.6 LSPosed APK
 on:
   push:
     branches: [feature/gboard-turkish-q-v0-6]
@@ -8,11 +8,12 @@ on:
       - 'experimental/gboard-pass-through-lsposed/**'
       - '.github/workflows/build-gboard-pass-through-lsposed.yml'
   workflow_dispatch:
+
 jobs:
   apk:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -31,7 +32,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Build experimental module
+      - name: Build final v0.6 module
         working-directory: experimental/gboard-pass-through-lsposed
         run: gradle --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
@@ -39,3 +40,38 @@ jobs:
           name: Gboard-Turkish-Q-v0.6-LSPosed-APK
           path: experimental/gboard-pass-through-lsposed/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      - name: Publish public GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/gboard-turkish-q-v0-6'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: gboard-turkish-q-v0.6.0
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          cp experimental/gboard-pass-through-lsposed/app/build/outputs/apk/debug/app-debug.apk release/Gboard_Turkce_Q_LSPosed_v0.6.apk
+          (cd release && sha256sum Gboard_Turkce_Q_LSPosed_v0.6.apk > SHA256SUMS.txt)
+          cat > release-notes.md <<'NOTES'
+          ## Gboard Türkçe Q — LSPosed v0.6
+
+          Xiaomi PC Manager 6.0.2.19 ekran yansıtma klavyesi için hazırlanan Gboard LSPosed modülünün son kullanıcı tarafından kabul edilen sürümüdür.
+
+          - Türkçe Q karakterleri: ğ ü ş ı ö ç (büyük harfler dâhil)
+          - @, noktalama işaretleri ve Backspace
+          - Gboard üzerinden Ctrl+A, Ctrl+C ve Ctrl+V düzenleyici eylemleri
+          - Yalnızca Xiaomi yansıtmasının sentetik klavye olaylarına odaklı davranış
+
+          **Kurulum:** APK'yi yükleyin. LSPosed'da eski sürümleri devre dışı bırakın; yalnızca bu modülü etkinleştirip kapsam olarak Gboard'u (com.google.android.inputmethod.latin) seçin ve telefonu yeniden başlatın.
+
+          **Uyumluluk:** Xiaomi 15 Ultra üzerinde geliştirildi; diğer cihazlar ve Gboard sürümleri garanti edilmez. Kısayollar uygulamanın düzenleyici desteğine bağlıdır. APK Android debug imzasıyla derlenmiştir; resmi Xiaomi/Google modülü değildir.
+
+          **Kaynak:** experimental/gboard-pass-through-lsposed, feature/gboard-turkish-q-v0-6
+          NOTES
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" release/Gboard_Turkce_Q_LSPosed_v0.6.apk release/SHA256SUMS.txt --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$RELEASE_TAG" release/Gboard_Turkce_Q_LSPosed_v0.6.apk release/SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title 'Gboard Türkçe Q — LSPosed v0.6' \
+              --notes-file release-notes.md --latest=false
+          fi
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json url --jq .url
